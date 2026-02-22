@@ -2,24 +2,24 @@
  * @jsxRuntime classic
  * @jsx jsx
  */
-import React, { useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import React, {useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState} from 'react';
 
 // eslint-disable-next-line @atlaskit/ui-styling-standard/use-compiled -- Ignored via go/DSP-18766
-import { css, jsx } from '@emotion/react';
+import {css, jsx} from '@emotion/react';
 import memoizeOne from 'memoize-one';
 import invariant from 'tiny-invariant';
 
-import { triggerPostMoveFlash } from '@atlaskit/pragmatic-drag-and-drop-flourish/trigger-post-move-flash';
-import { type Instruction } from '@atlaskit/pragmatic-drag-and-drop-hitbox/list-item';
+import {triggerPostMoveFlash} from '@atlaskit/pragmatic-drag-and-drop-flourish/trigger-post-move-flash';
+import {type Instruction} from '@atlaskit/pragmatic-drag-and-drop-hitbox/list-item';
 import * as liveRegion from '@atlaskit/pragmatic-drag-and-drop-live-region';
-import { GroupDropIndicator } from '@atlaskit/pragmatic-drag-and-drop-react-drop-indicator/group';
-import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
+import {GroupDropIndicator} from '@atlaskit/pragmatic-drag-and-drop-react-drop-indicator/group';
+import {combine} from '@atlaskit/pragmatic-drag-and-drop/combine';
 import {
     dropTargetForElements,
     type ElementDropTargetEventBasePayload,
     monitorForElements,
 } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import { token } from '@atlaskit/tokens';
+import {token} from '@atlaskit/tokens';
 
 import {
     getInitialTreeState,
@@ -27,8 +27,13 @@ import {
     type TreeItem as TreeItemType,
     treeStateReducer,
 } from './pragmatic-drag-and-drop/documentation/examples/data/tree';
-import { DependencyContext, TreeContext, type TreeContextValue } from './pragmatic-drag-and-drop/documentation/examples/pieces/tree/tree-context';
+import {
+    DependencyContext,
+    TreeContext,
+    type TreeContextValue
+} from './pragmatic-drag-and-drop/documentation/examples/pieces/tree/tree-context';
 import TreeItem from './pragmatic-drag-and-drop/documentation/examples/pieces/tree/tree-item';
+import MyEditor from "./Editor.tsx";
 
 const treeStyles = css({
     display: 'flex',
@@ -53,24 +58,24 @@ function createTreeItemRegistry() {
         element: HTMLElement;
         actionMenuTrigger: HTMLElement;
     }): CleanupFn => {
-        registry.set(itemId, { element, actionMenuTrigger });
+        registry.set(itemId, {element, actionMenuTrigger});
         return () => {
             registry.delete(itemId);
         };
     };
 
-    return { registry, registerTreeItem };
+    return {registry, registerTreeItem};
 }
 
 export default function TreeLegacy(): React.JSX.Element {
     const [state, updateState] = useReducer(treeStateReducer, null, getInitialTreeState);
     const ref = useRef<HTMLDivElement>(null);
-    const { extractInstruction } = useContext(DependencyContext);
+    const {extractInstruction} = useContext(DependencyContext);
     const [dropTargetState, setDropTargetState] = useState<'is-innermost-over' | 'idle'>('idle');
 
-    const [{ registry, registerTreeItem }] = useState(createTreeItemRegistry);
+    const [{registry, registerTreeItem}] = useState(createTreeItemRegistry);
 
-    const { data, lastAction } = state;
+    const {data, lastAction} = state;
     let lastStateRef = useRef<TreeItemType[]>(data);
     useEffect(() => {
         lastStateRef.current = data;
@@ -92,7 +97,7 @@ export default function TreeLegacy(): React.JSX.Element {
                     } in ${parentName}.`,
                 );
 
-                const { element, actionMenuTrigger } = registry.get(lastAction.itemId) ?? {};
+                const {element, actionMenuTrigger} = registry.get(lastAction.itemId) ?? {};
                 if (element) {
                     triggerPostMoveFlash(element);
                 }
@@ -107,7 +112,7 @@ export default function TreeLegacy(): React.JSX.Element {
             }
 
             if (lastAction.type === 'instruction') {
-                const { element } = registry.get(lastAction.itemId) ?? {};
+                const {element} = registry.get(lastAction.itemId) ?? {};
                 if (element) {
                     triggerPostMoveFlash(element);
                 }
@@ -128,7 +133,7 @@ export default function TreeLegacy(): React.JSX.Element {
      *
      * Uses a depth-first search (DFS) to compile a list of possible targets.
      */
-    const getMoveTargets = useCallback(({ itemId }: { itemId: string }) => {
+    const getMoveTargets = useCallback(({itemId}: { itemId: string }) => {
         const data = lastStateRef.current;
 
         const targets = [];
@@ -187,7 +192,7 @@ export default function TreeLegacy(): React.JSX.Element {
             // An ideal refactor would be to update our data shape
             // to allow quick lookups of parents
             getPathToItem: memoizeOne(
-                (targetId: string) => tree.getPathToItem({ current: lastStateRef.current, targetId }) ?? [],
+                (targetId: string) => tree.getPathToItem({current: lastStateRef.current, targetId}) ?? [],
             ),
             getMoveTargets,
             getChildrenOfItem,
@@ -202,7 +207,7 @@ export default function TreeLegacy(): React.JSX.Element {
         invariant(ref.current);
         invariant(groupRef.current);
 
-        function onDropTargetChange({ location, self }: ElementDropTargetEventBasePayload) {
+        function onDropTargetChange({location, self}: ElementDropTargetEventBasePayload) {
             const [innerMost] = location.current.dropTargets.filter(
                 (dropTarget) => dropTarget.data.type === 'group',
             );
@@ -212,11 +217,11 @@ export default function TreeLegacy(): React.JSX.Element {
 
         return combine(
             monitorForElements({
-                canMonitor: ({ source }) =>
+                canMonitor: ({source}) =>
                     source.data.uniqueContextId === context.uniqueContextId &&
                     source.data.type === 'tree-item',
                 onDrop(args) {
-                    const { location, source } = args;
+                    const {location, source} = args;
                     // didn't drop on anything
                     if (!location.current.dropTargets.length) {
                         return;
@@ -241,10 +246,10 @@ export default function TreeLegacy(): React.JSX.Element {
             }),
             dropTargetForElements({
                 element: groupRef.current,
-                canDrop: ({ source }) =>
+                canDrop: ({source}) =>
                     source.data.uniqueContextId === context.uniqueContextId &&
                     source.data.type === 'tree-item',
-                getData: () => ({ type: 'group' }),
+                getData: () => ({type: 'group'}),
                 onDragStart: onDropTargetChange,
                 onDropTargetChange: onDropTargetChange,
                 onDragLeave: () => setDropTargetState('idle'),
@@ -254,17 +259,31 @@ export default function TreeLegacy(): React.JSX.Element {
     }, [context, extractInstruction]);
 
     return (
-        <TreeContext.Provider value={context}>
-            {/* eslint-disable-next-line @atlaskit/ui-styling-standard/enforce-style-prop -- Ignored via go/DSP-18766 */}
-            <div style={{ display: 'flex', justifyContent: 'center', padding: 24 }}>
-                <div css={treeStyles} id="tree" ref={ref}>
-                    <GroupDropIndicator isActive={dropTargetState === 'is-innermost-over'} ref={groupRef}>
-                        {data.map((item, index) => {
-                            return <TreeItem item={item} key={item.id} level={0} index={index} />;
-                        })}
-                    </GroupDropIndicator>
-                </div>
+        <div>
+            <div style={{
+                margin: "0 auto"
+            }}>
+                <h2> 这是 pdnd 的树形组件</h2>
             </div>
-        </TreeContext.Provider>
+
+            <TreeContext.Provider value={context}>
+                {/* eslint-disable-next-line @atlaskit/ui-styling-standard/enforce-style-prop -- Ignored via go/DSP-18766 */}
+                <div style={{display: 'flex', justifyContent: 'center', padding: 24}}>
+                    <div css={treeStyles} id="tree" ref={ref}>
+                        <GroupDropIndicator isActive={dropTargetState === 'is-innermost-over'} ref={groupRef}>
+                            {data.map((item, index) => {
+                                return <TreeItem item={item} key={item.id} level={0} index={index}/>;
+                            })}
+                        </GroupDropIndicator>
+                    </div>
+                </div>
+            </TreeContext.Provider>
+            <h2>
+                这是blocknote 组件
+            </h2>
+            <MyEditor/>
+        </div>
+
+
     );
 }
